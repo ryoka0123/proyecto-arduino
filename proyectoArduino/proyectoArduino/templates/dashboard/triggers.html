@@ -23,28 +23,208 @@
             border-radius: 50%;
             cursor: pointer;
         }
-        .box {
+        .triggers-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+        .trigger-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 30px 25px 20px 25px;
+            width: 320px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .trigger-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .trigger-context {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 25px;
+        }
+        .action-btn {
+            width: 90%;
+            padding: 15px 0;
+            font-size: 18px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .action-btn:hover {
+            background: #1769aa;
+        }
+        .edit-btn, .delete-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 8px;
+            font-size: 16px;
+        }
+        .edit-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+        .trigger-btns {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            min-width: 300px;
+            text-align: center;
+            position: relative;
+        }
+        .modal-content input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .modal-content button {
+            margin: 10px 5px 0 5px;
+        }
+        .container {
             background: white;
             border-radius: 30px;
             padding: 60px 30px;
             width: 70%;
             margin: 0 auto;
-            text-align: center;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            font-size: 20px;
         }
     </style>
 </head>
 <body>
     <div class="top-bar">
-        <div>{{ arduino.nombre }}</div>
-        <form method="get" action="{% url 'registroTriggers' %}">
-            <button class="add-btn">+</button>
+        <div style="display: flex; align-items: center;">
+            <a href="{% url 'microcontrolador' %}" style="text-decoration: none; font-size: 28px; margin-right: 15px;">&#8592;</a>
+            <span>{{ arduino.nombre }}</span>
+        </div>
+        <form method="get" action="{% url 'registroTriggers' arduino.id %}">
+            <button class="add-btn" title="Agregar Trigger">+</button>
         </form>
     </div>
 
-    <div class="box">
-        <strong>NO TIENES NINGÚN TRIGGER REGISTRADO EN ESTE ARDUINO.</strong>
+    <div class="container">
+        <div class="triggers-container">
+            {% if triggers %}
+                {% for trigger in triggers %}
+                    <div class="trigger-card">
+                        <div class="trigger-title">{{ trigger.nombre }}</div>
+                        <div class="trigger-context">{{ trigger.contexto }}</div>
+                        <button class="action-btn">Accionar</button>
+                        <div class="trigger-btns">
+                            <button class="edit-btn"
+                                onclick="openEditModal({{ trigger.id }}, '{{ trigger.nombre|escapejs }}', '{{ trigger.contexto|escapejs }}')">
+                                Editar
+                            </button>
+                            <button class="delete-btn"
+                                onclick="openDeleteModal({{ trigger.id }}, '{{ trigger.nombre|escapejs }}')">
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <strong>NO TIENES NINGÚN TRIGGER REGISTRADO EN ESTE ARDUINO.</strong>
+            {% endif %}
+        </div>
     </div>
+
+    <!-- Modal para eliminar trigger -->
+    <div id="modalEliminarTrigger" class="modal">
+        <div class="modal-content">
+            <h3 id="modalMensajeTrigger"></h3>
+            <form id="formEliminarTrigger" method="post" style="margin-top:20px;">
+                {% csrf_token %}
+                <button type="button" onclick="closeDeleteModal()" style="padding:8px 20px; margin-right:10px;">Cancelar</button>
+                <button type="submit" style="padding:8px 20px; background:#f44336; color:white; border:none; border-radius:5px;">Confirmar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para editar trigger -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Editar Trigger</h3>
+            <form id="editForm" method="post" style="margin-top:20px;">
+                {% csrf_token %}
+                <input type="text" id="editNombre" name="nombre" required><br>
+                <input type="text" id="editContexto" name="contexto" required><br>
+                <button type="button" onclick="closeEditModal()" style="padding:8px 20px; margin-right:10px;">Cancelar</button>
+                <button type="submit" style="padding:8px 20px; background:#4CAF50; color:white; border:none; border-radius:5px;">Confirmar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentTriggerId = null;
+
+        function openEditModal(triggerId, nombre, contexto) {
+            currentTriggerId = triggerId;
+            document.getElementById('editNombre').value = nombre;
+            document.getElementById('editContexto').value = contexto;
+            document.getElementById('editForm').action = "{% url 'editar_trigger' arduino.id 0 %}".replace('/0/', '/' + triggerId + '/');
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Modal de eliminar trigger
+        function openDeleteModal(triggerId, nombre) {
+            document.getElementById('modalEliminarTrigger').style.display = 'flex';
+            document.getElementById('modalMensajeTrigger').innerText = '¿Estás seguro de eliminar el trigger "' + nombre + '"?';
+            document.getElementById('formEliminarTrigger').action = "{% url 'eliminar_trigger' arduino.id 0 %}".replace('/0/', '/' + triggerId + '/');
+        }
+        function closeDeleteModal() {
+            document.getElementById('modalEliminarTrigger').style.display = 'none';
+        }
+
+        // Cierra los modales si se hace click fuera del contenido
+        window.onclick = function(event) {
+            let editModal = document.getElementById('editModal');
+            let deleteModal = document.getElementById('modalEliminarTrigger');
+            if (event.target == editModal) {
+                closeEditModal();
+            }
+            if (event.target == deleteModal) {
+                closeDeleteModal();
+            }
+        }
+    </script>
 </body>
 </html>

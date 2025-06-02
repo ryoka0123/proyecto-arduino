@@ -60,7 +60,7 @@
                 <div style="border:1px solid #ccc; border-radius:15px; padding:20px; margin:20px auto; width:60%; background:#f9f9f9; position:relative;">
                     <h2>{{ arduino.nombre }}</h2>
                     <p>IP: {{ arduino.ip }}</p>
-                    <a href="#" style="padding:8px 20px; background:#2196F3; color:white; border-radius:5px; text-decoration:none;">Ir</a>
+                    <a href="{% url 'triggers' arduino.id %}" style="padding:8px 20px; background:#2196F3; color:white; border-radius:5px; text-decoration:none;">Ir</a>
                     <button onclick="openModal({{ arduino.id }}, '{{ arduino.nombre|escapejs }}')" style="padding:8px 20px; background:#f44336; color:white; border-radius:5px; border:none; margin-left:10px; cursor:pointer;">
                         Eliminar
                     </button>

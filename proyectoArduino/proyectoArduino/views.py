@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from core.models import Arduino
+from core.models import Arduino, Trigger
 from django.http import HttpResponseNotFound
 
 def inicio_sesion(request):
@@ -55,8 +55,41 @@ def registroArduino(request):
     return render(request, 'forms/registroArduino.html')
 
 @login_required
-def registroTriggers(request):
-    return render(request, 'forms/registroTriggers.html')
+def triggers(request, arduino_id):
+    try:
+        arduino = Arduino.objects.get(id=arduino_id, user=request.user)
+    except Arduino.DoesNotExist:
+        return HttpResponseNotFound("Arduino no encontrado")
+    triggers = Trigger.objects.filter(arduino=arduino)
+    return render(request, 'dashboard/triggers.html', {'arduino': arduino, 'triggers': triggers})
+
+@login_required
+def registroTriggers(request, arduino_id):
+    arduino = Arduino.objects.get(id=arduino_id, user=request.user)
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        contexto = request.POST.get('contexto')
+        Trigger.objects.create(arduino=arduino, nombre=nombre, contexto=contexto)
+        return redirect('triggers', arduino_id=arduino.id)
+    return render(request, 'forms/registroTriggers.html', {'arduino_id': arduino_id})
+
+@login_required
+def editar_trigger(request, arduino_id, trigger_id):
+    trigger = Trigger.objects.get(id=trigger_id, arduino__id=arduino_id, arduino__user=request.user)
+    if request.method == 'POST':
+        trigger.nombre = request.POST.get('nombre')
+        trigger.contexto = request.POST.get('contexto')
+        trigger.save()
+        return redirect('triggers', arduino_id=arduino_id)
+    # No necesitas renderizar un template, ya que el formulario está en el modal
+    return redirect('triggers', arduino_id=arduino_id)
+
+@login_required
+def eliminar_trigger(request, arduino_id, trigger_id):
+    trigger = Trigger.objects.get(id=trigger_id, arduino__id=arduino_id, arduino__user=request.user)
+    if request.method == 'POST':
+        trigger.delete()
+    return redirect('triggers', arduino_id=arduino_id)
 
 @login_required
 def microcontrolador(request):
@@ -65,10 +98,6 @@ def microcontrolador(request):
         'username': request.user.username,
         'arduinos': arduinos
     })
-
-@login_required
-def triggers(request):
-    return render(request, 'dashboard/triggers.html')
 
 @login_required
 def eliminar_arduino(request, arduino_id):
