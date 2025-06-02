@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Arduino</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            text-align: center;
+            padding: 50px;
+        }
+        .form-container {
+            background: white;
+            border-radius: 30px;
+            padding: 40px 30px;
+            width: 350px;
+            margin: 0 auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            text-decoration: none;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <a class="back-btn" href="{% url 'microcontrolador' %}">&#8592;</a>
+        <h2>REGISTRA TU ARDUINO</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <div style="color:red;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="nombre" placeholder="Nombre del Arduino" required><br>
+            <input type="text" name="ip" placeholder="IP del Arduino" required><br>
+            <button type="submit">Registrar</button>
+        </form>
+    </div>
+</body>
+</html>
