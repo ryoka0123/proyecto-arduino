@@ -343,6 +343,11 @@
         </div>
     </div>
 
+    <!-- Botón de micrófono flotante -->
+    <button id="voice-btn" title="Control por voz"
+        style="position: fixed; bottom: 30px; right: 30px; background: #2196F3; color: #fff; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 28px; box-shadow: 0 4px 16px rgba(33,150,243,0.18); cursor: pointer; z-index: 2000;">
+        🎤
+    </button>
     <script>
         let currentTriggerId = null;
 
@@ -418,6 +423,61 @@
             if (event.target == deleteModal) {
                 closeDeleteModal();
             }
+        }
+
+        // Reconocimiento de voz
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            document.getElementById('voice-btn').onclick = function() {
+                recognition.start();
+                this.style.background = '#1769aa';
+            };
+
+            recognition.onresult = function(event) {
+    function quitarTildes(str) {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    let texto = event.results[0][0].transcript
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s]/g, '')
+        .replace(/\s+/g, '_');
+    texto = quitarTildes(texto);
+
+    console.log('Comando de voz reconocido:', texto);
+
+    const triggers = document.querySelectorAll('.trigger-card');
+    let encontrado = false;
+    triggers.forEach(card => {
+        let nombre = card.querySelector('.trigger-title').innerText
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s]/g, '')
+            .replace(/\s+/g, '_');
+        nombre = quitarTildes(nombre);
+
+        if (texto === nombre) {
+            card.querySelector('.action-btn').click();
+            encontrado = true;
+        }
+    });
+    if (!encontrado) {
+        alert('No se reconoció ningún trigger en el comando de voz.');
+    }
+};
+            recognition.onerror = function() {
+                document.getElementById('voice-btn').style.background = '#2196F3';
+                alert('No se pudo reconocer el comando de voz.');
+            };
+        } else {
+            document.getElementById('voice-btn').style.display = 'none';
+            alert('Tu navegador no soporta reconocimiento de voz.');
         }
     </script>
 </body>
